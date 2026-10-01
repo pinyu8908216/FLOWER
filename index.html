@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>iPad 倒數計時器</title>
+    <!-- PWA 標籤與設定 -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="倒數計時">
     <style>
         * {
             box-sizing: border-box;
@@ -25,7 +31,6 @@
             align-items: center;
         }
 
-        /* 倒數計時器數字容器 */
         .timer-display {
             font-size: 32vw;
             font-weight: 900;
@@ -54,7 +59,6 @@
             100% { opacity: 1; }
         }
 
-        /* 右上角設定面板 */
         .settings-panel {
             position: absolute;
             top: 24px;
@@ -155,7 +159,6 @@
 </head>
 <body>
 
-    <!-- 右上角控制面板 -->
     <div class="settings-panel">
         <div class="time-inputs">
             <div class="input-group">
@@ -173,10 +176,18 @@
         </div>
     </div>
 
-    <!-- 主倒數計時顯示 -->
     <div class="timer-display" id="timerDisplay">15:00</div>
 
     <script>
+        // 註冊 Service Worker 實現離線使用
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('離線服務註冊成功'))
+                    .catch(err => console.log('離線服務註冊失敗:', err));
+            });
+        }
+
         let totalSeconds = 15 * 60;
         let initialSeconds = 15 * 60;
         let timerInterval = null;
@@ -188,7 +199,6 @@
         const startBtn = document.getElementById('startBtn');
         const resetBtn = document.getElementById('resetBtn');
 
-        // 音效設定 (使用 Web Audio API 生成蜂鳴聲)
         function playBeep() {
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -196,7 +206,7 @@
                 const gain = audioCtx.createGain();
                 
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 音高
+                osc.frequency.setValueAtTime(880, audioCtx.currentTime);
                 gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
                 
                 osc.connect(gain);
@@ -226,7 +236,6 @@
         function startTimer() {
             if (isRunning) return;
 
-            // 若剛好倒數完畢，按下開始自動從輸入框重新開始
             if (totalSeconds <= 0) {
                 totalSeconds = getInputValueInSeconds();
                 initialSeconds = totalSeconds;
@@ -282,7 +291,6 @@
             updateDisplay(totalSeconds);
         }
 
-        // 輸入框變更事件
         function handleInputChange() {
             let m = parseInt(minInput.value, 10);
             let s = parseInt(secInput.value, 10);
@@ -299,7 +307,6 @@
             }
         }
 
-        // 事件監聽
         startBtn.addEventListener('click', toggleTimer);
         resetBtn.addEventListener('click', resetTimer);
         display.addEventListener('click', toggleTimer);
@@ -307,13 +314,11 @@
         minInput.addEventListener('change', handleInputChange);
         secInput.addEventListener('change', handleInputChange);
 
-        // 格式化秒數輸入框 (失去焦點補零)
         secInput.addEventListener('blur', () => {
             let s = parseInt(secInput.value, 10) || 0;
             secInput.value = String(Math.min(s, 59)).padStart(2, '0');
         });
 
-        // 初始化顯示
         updateDisplay(totalSeconds);
     </script>
 </body>
